@@ -5,15 +5,26 @@ from math import radians, cos, sin, asin, sqrt
 from typing import Tuple
 
 import geopy
+from geopy import geocoders
 from flask import Blueprint, render_template, request
 from shapely.geometry import Point, shape, Polygon
 from shapely.ops import nearest_points
 
-geocalc = Blueprint("geocalc", __name__, static_folder='static', template_folder='templates')
+geocalc = Blueprint("geocalc", __name__, static_folder='static',
+                    template_folder='templates')
+
+MKAD_COORDS_FILE = "mkad.geojson" # MKAD coordinates geojson file.
+LOCATOR: geocoders = geopy.ArcGIS() # Geocoder to use.
+R: float = 6372.8  # Radius of Earth. 3959.87433 miles or 6372.8 km
 
 
 @geocalc.route("/")
 def calc() -> str:
+    """Returns the HTML code to be displayed and provides the address
+    information from HTTP request to other functions.
+
+            Returns: HTML code to display
+    """
     addr: str = request.args.get('address')
     if addr is None: addr = "А107, Moskovskaya oblast', Rusya, 142410"
 
@@ -23,23 +34,17 @@ def calc() -> str:
     lat2: float
     lon2: float
 
-    distance, lat1, lon1, lat2, lon2 = distance_calc(addr, mkad_coords)
+    distance, lat1, lon1, lat2, lon2 = distance_calc(addr, MKAD_COORDS_FILE)
 
-    if distance == 0: return "<h1>Selected address is inside MKAD </h1>"
+    if distance == 0:
+        return "<h1>Selected address is inside MKAD </h1>"
 
     write_files(addr, lat1, lon1, lat2, lon2, distance)
     return render_template("index.html", distance=distance)
 
 
-# addr = "А107, Moskovskaya oblast', Rusya, 142410"
-# addr : str = ""
-# point = Point(38.42442512512207, 55.82491258016849)
-
-mkad_coords = "mkad.geojson"
-locator = geopy.ArcGIS()  # type: geocoders
-
-
-def mkad_poly_calc(mkad_crds: str = mkad_coords) -> Polygon:
+def mkad_poly_calc(mkad_crds: str = MKAD_COORDS_FILE) -> Polygon:
+    """Creates a polygon from a .geojson file."""
     with open(mkad_crds) as f:
         #   features = json.load(f)["features"]
         js = json.load(f)
@@ -49,35 +54,55 @@ def mkad_poly_calc(mkad_crds: str = mkad_coords) -> Polygon:
     return mkad_poly
 
 
-def point_calc(address: str, locator=geopy.ArcGIS()) -> Point:
+def point_calc(address: str, locator=LOCATOR) -> Point:
+    """Calculates coordinates from an address using a geocoder."""
     location = locator.geocode(address)
     point = Point(location.longitude, location.latitude)
     return point
 
 
-def haversine(lati1: float, long1: float, lati2: float, long2: float) -> float:
-    R: float = 6372.8  # 3959.87433  this is in miles.  For Earth radius in kilometers use 6372.8 km
-
+def haversine(lati1: float, long1: float, lati2: float, long2: float,
+              R: float = 6372.8) -> float:
+    """Calculates the haversine distance using two points' latitude
+    and longitude coordinates and Earth's radius(R). lati1 and long1
+    for the first point, lati2 and long2 for the second point.
+    """
     d_lat: float = radians(lati2 - lati1)
     d_lon: float = radians(long2 - long1)
     lati1: float = radians(lati1)
     lati2: float = radians(lati2)
 
-    a: float = sin(d_lat / 2) ** 2 + cos(lati1) * cos(lati2) * sin(d_lon / 2) ** 2
+    a: float = sin(d_lat / 2) ** 2 + cos(lati1) * \
+               cos(lati2) * sin(d_lon / 2) ** 2
     c: float = 2 * asin(sqrt(a))
 
     return R * c
 
 
-# Usage
-# lon1 = 37.84326553344727
-# lat1 = 55.77149195159078
-# lon2 = 38.42442512512207
-# lat2 = 55.82491258016849
+def distance_calc(addr: str,
+                  mkad_coords: str = MKAD_COORDS_FILE,
+                  locator: str=LOCATOR)\
+        -> Tuple[float, float, float, float, float]:
+    """
+    Calculates nearest haversine distance and nearest
+    point coordinates using address and polygon coordinates.
 
-def distance_calc(addr: str, mkad_coords: str = mkad_coords) -> Tuple[float, float, float, float, float]:
+            Parameters:
+                addr (int): Given address
+                mkad_coords (str): Name of the .geojson file
+                locator (str): Geocoder to be used. Default ArcGIS
+
+            Returns:
+                distance (float): Haversine distance between address
+                    and the nearest point of given polygon coordinates.
+                lat1 (float): latitude of nearest polygon point
+                lon1 (float): longitude of nearest polygon point
+                lat2 (float): latitude of address
+                lon2 (float): longitude of address
+
+     """
     poly: Polygon = mkad_poly_calc(mkad_coords)
-    point: Point = point_calc(addr, locator=geopy.ArcGIS())
+    point: Point = point_calc(addr, locator=LOCATOR)
 
     if poly.contains(point): return 0, 0, 0, 0, 0
 
@@ -94,12 +119,11 @@ def distance_calc(addr: str, mkad_coords: str = mkad_coords) -> Tuple[float, flo
     return distance, lat1, lon1, lat2, lon2
 
 
-# distance, lat1, lon1, lat2, lon2 = distance_calc(addr, mkad_coords)
-
-
-def write_files(addr:str, lat1:float, lon1:float, lat2:float, lon2:float, distance:float) -> None:
-    # Writing to files
-    fields:list = [datetime.datetime.utcnow(), addr, lat1, lon1, lat2, lon2, distance]
+def write_files(addr: str, lat1: float, lon1: float, lat2: float,
+                lon2: float, distance: float) -> None:
+    """Writes related information to geoc.csv and geoc.log files."""
+    fields: list = [datetime.datetime.utcnow(), addr, lat1, lon1,
+                    lat2, lon2, distance]
 
     with open(r'geoc.csv', 'a', encoding='utf-8') as file:
         writer = csv.writer(file, delimiter=';')
