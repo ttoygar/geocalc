@@ -1,14 +1,14 @@
-import os, sys
-
-import pytest
+import os
+import sys
 
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root)
 print(root)
-# import pytest
-from fgeocoder import app, geocalc
+
+from flask import Flask
 import unittest
-import os
+from fgeocoder.geocalc import geocalc
+from fgeocoder import geocalc as geo
 
 
 class GeocoderTestCase(unittest.TestCase):
@@ -19,9 +19,14 @@ class GeocoderTestCase(unittest.TestCase):
         # self.app = app.app.test_client()
         # self.app = Flask(__name__)
 
+    def tearDown(self) -> None:
+        pass
+
     def test_response(self):
-        tester = app.app.test_client(self)
-        response = tester.get('/')
+        app = Flask(__name__)
+        app.register_blueprint(geocalc, url_prefix='/')
+        web = app.test_client()
+        response = web.get('/')
         self.assertEqual(response.status_code, 200)
         # self.assertEqual(response.headers['content-type'], "text/html; charset=utf-8")
 
@@ -31,23 +36,24 @@ class GeocoderTestCase(unittest.TestCase):
             self.assertEqual(file.read(50), '{"type":"FeatureCollection","features":[{"type":"F')
 
     def test_poly(self):
-        poly_test = app.mkad_poly_calc()
+        poly_test = geo.mkad_poly_calc()
         self.assertEqual(poly_test.geom_type, 'Polygon')
-        self.assertEqual(str(app.mkad_poly_calc())[:50], "POLYGON ((37.84026145935059 55.79831394954606, 37.")
+        self.assertEqual(str(geo.mkad_poly_calc())[:50], "POLYGON ((37.84026145935059 55.79831394954606, 37.")
 
     def test_points(self):
-        self.assertIn("geopy.geocoders.arcgis.ArcGIS", str(app.locator))
-        location = app.locator.geocode("Ankara")
+        self.assertIn("geopy.geocoders.arcgis.ArcGIS", str(geo.locator))
+        location = geo.locator.geocode("Ankara")
         self.assertAlmostEqual(location.latitude, 39.9211, places=3)
         self.assertAlmostEqual(location.longitude, 32.8539, places=3)
 
     def test_haversine(self):
-        self.assertAlmostEqual(app.haversine(1, 2, 3, 4), 314.4918, places=3)
+        self.assertAlmostEqual(geo.haversine(1, 2, 3, 4), 314.4918, places=3)
 
     def test_distances(self):
         addresses = ["А107, Moskovskaya oblast', Rusya, 142410",
                      "Pushkinsky District, Moskova Oblastı, Rusya, 141273",
                      "Ярославское ш., 47 км, Московская обл., 141273"]
-        confirms = [36.774, 33.980, 32.042]
-        results = [app.distance_calc(address)[0] for address in addresses]
-        assert confirms == pytest.approx(results, rel=1e-3)
+        confirms = [36.775, 33.981, 32.043]
+        results = [geo.distance_calc(address)[0] for address in addresses]
+        for i in range(len(confirms)):
+            self.assertAlmostEqual(confirms[i], results[i], places=3)
