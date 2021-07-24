@@ -13,8 +13,8 @@ from shapely.ops import nearest_points
 geocalc = Blueprint("geocalc", __name__, static_folder='static',
                     template_folder='templates')
 
-MKAD_COORDS_FILE = "mkad.geojson" # MKAD coordinates geojson file.
-LOCATOR: geocoders = geopy.ArcGIS() # Geocoder to use.
+MKAD_COORDS_FILE = "mkad.geojson"  # MKAD coordinates geojson file.
+LOCATOR: geocoders = geopy.ArcGIS()  # Geocoder to use.
 R: float = 6372.8  # Radius of Earth. 3959.87433 miles or 6372.8 km
 
 
@@ -62,10 +62,19 @@ def point_calc(address: str, locator=LOCATOR) -> Point:
 
 
 def haversine(lati1: float, long1: float, lati2: float, long2: float,
-              R: float = 6372.8) -> float:
+              r: float = R) -> float:
     """Calculates the haversine distance using two points' latitude
-    and longitude coordinates and Earth's radius(R). lati1 and long1
-    for the first point, lati2 and long2 for the second point.
+    and longitude coordinates and Earth's radius.
+
+            Parameters:
+                lati1 (float): latitude of first point
+                long1 (float): longitude of first point
+                lati2 (float): latitude of second point
+                long2 (float): longitude of second point
+                r (float): Earth's radius. Default R=6372.8 km
+
+            Returns:
+                haversine_distance (float): Calculated haversine distance
     """
     d_lat: float = radians(lati2 - lati1)
     d_lon: float = radians(long2 - long1)
@@ -75,13 +84,14 @@ def haversine(lati1: float, long1: float, lati2: float, long2: float,
     a: float = sin(d_lat / 2) ** 2 + cos(lati1) * \
                cos(lati2) * sin(d_lon / 2) ** 2
     c: float = 2 * asin(sqrt(a))
+    haversine_distance: float = r * c
 
-    return R * c
+    return haversine_distance
 
 
 def distance_calc(addr: str,
                   mkad_coords: str = MKAD_COORDS_FILE,
-                  locator: str=LOCATOR)\
+                  locator: geocoders = LOCATOR) \
         -> Tuple[float, float, float, float, float]:
     """
     Calculates nearest haversine distance and nearest
@@ -102,7 +112,7 @@ def distance_calc(addr: str,
 
      """
     poly: Polygon = mkad_poly_calc(mkad_coords)
-    point: Point = point_calc(addr, locator=LOCATOR)
+    point: Point = point_calc(addr, locator)
 
     if poly.contains(point): return 0, 0, 0, 0, 0
 
