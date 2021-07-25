@@ -1,11 +1,11 @@
 
-MKAD poligonu buradan çizildi.
+MKAD polygon source.
 https://geojson.io/#map=10/55.7221/37.5677
 
-en yakın nokta buradan bulundu
+nearest point source
 https://stackoverflow.com/questions/33311616/find-coordinate-of-the-closest-point-on-polygon-in-shapely/33324058#33324058
 
-haversine uygulaması buradan bulundu
+haversine source
 https://stackoverflow.com/questions/4913349/haversine-formula-in-python-bearing-and-distance-between-two-gps-points/4913653#4913653
 
 

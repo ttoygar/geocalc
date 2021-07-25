@@ -21,7 +21,6 @@ from fgeocoder.geocalc import geocalc as geo
 # def client():
 #     client = geocalc.
 #     yield client
-print(os.path.curdir)
 
 
 class GeocoderTestCase(unittest.TestCase):
@@ -43,8 +42,8 @@ class GeocoderTestCase(unittest.TestCase):
         # app.register_blueprint(geocalc, url_prefix='/')
         # web = app.test_client()
         response = self.client.get('/')
-        self.assertEqual(response.status, "200 OK")
-        assert '<title>geocalc</title>' in response.data.decode('utf-8')
+        assert response.status_code, 200
+        assert 'HTML' in response.data.decode('utf-8')
         # self.assertEqual(response.headers['content-type'], "text/html; charset=utf-8")
 
     def test_mkad_file(self):
@@ -90,4 +89,11 @@ class GeocoderTestCase(unittest.TestCase):
         confirms = ["<h1>1776.","<h1>36.7", "<h1>33.9", "<h1>32.0"]
         for i in range(len(addresses)):
             response = self.client.get(f"/?address={addresses[i]}")
-            self.assertIn(confirms[i], response.data.decode('utf-8'))
+            self.assertIn(confirms[i], response.data.decode('utf-8'), msg=f"address: {addresses[i]}")
+
+    def test_corner_cases(self):
+        # empty query
+        for mark in "+.,-/_-|":
+            query = f"/?address={mark}"
+            response = self.client.get(query)
+            self.assertEqual(response.status, "200 OK", msg=f"Problematic query found: {mark}")

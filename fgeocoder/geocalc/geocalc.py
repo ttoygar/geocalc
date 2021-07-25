@@ -14,7 +14,8 @@ from shapely.ops import nearest_points
 geocalc = Blueprint("geocalc", __name__, static_folder='static',
                     template_folder='templates')
 
-MKAD_COORDS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mkad.geojson")  # MKAD coordinates geojson file.
+MKAD_COORDS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                "mkad.geojson")  # MKAD coordinates geojson file.
 LOCATOR: geocoders = geopy.ArcGIS()  # Geocoder to use.
 R: float = 6372.8  # Radius of Earth. 3959.87433 miles or 6372.8 km
 
@@ -27,7 +28,9 @@ def calc() -> str:
             Returns: HTML code to display
     """
     addr: str = request.args.get('address')
-    if addr is None: addr = "А107, Moskovskaya oblast', Rusya, 142410"
+
+    # Check the corner cases
+    addr: str = corner_cases(addr)
 
     distance: float
     lat1: float
@@ -42,6 +45,19 @@ def calc() -> str:
 
     write_files(addr, lat1, lon1, lat2, lon2, distance)
     return render_template("index.html", distance=distance)
+
+
+def corner_cases(addr: str):
+    """Returns True if an abnormality found in given address"""
+
+    if addr in ["%20", "+", ".", "[", "]", "{", "}", "\\", "%", "^", "*", ",",
+                "-", "/", ";", "<", ">", "=", "|", " ", "_", "|","%7C"]:
+        return "İstanbul"
+
+    for m in "+.[]{}\\%^*-/;<>=|_|":
+        if m in addr:
+            addr = addr.replace(m, "")
+    return addr
 
 
 def mkad_poly_calc(mkad_crds: str = MKAD_COORDS_FILE) -> Polygon:
