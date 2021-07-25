@@ -1,6 +1,6 @@
 # geocalc
 
-*geocalc* is a program based on Flask framework designed to calculate the closest distance to "MKAD" of any address given as http query.
+*geocalc* is an app based on Flask framework designed to calculate the closest haversine distance to "MKAD" from any address given as http query.
 
 
 ## Installation
