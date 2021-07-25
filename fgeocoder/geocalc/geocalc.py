@@ -27,6 +27,11 @@ def calc() -> str:
 
             Returns: HTML code to display
     """
+    if request.args.get('address') is None:
+        return "<h1>Hello. Welcome to geocalc</h1> <h3>Please enter an " \
+               "address to address bar as a query. For this add " \
+               "<p>/?address=</p> to the end of current web address. Then " \
+               "write the address at the end of it.</h3> "
     addr: str = request.args.get('address')
 
     # Check the corner cases
