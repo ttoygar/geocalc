@@ -1,18 +1,18 @@
-import os,sys
+import os, sys
 import tempfile
 
 import pytest
 import unittest
 from flask import Flask
+
 root = os.path.dirname(os.getcwd())
 sys.path.append(root)
 
 from fgeocoder import create_app
 # from fgeocoder.geocalc import geocalc
 # from fgeocoder import geocalc as geo
-from fgeocoder.geocalc.geocalc import geocalc
+# from fgeocoder.geocalc.geocalc import geocalc
 from fgeocoder.geocalc import geocalc as geo
-
 
 # print(os.path.isfile(os.path.join(os.getcwd(),"fgeocoder", "geocalc","mkad.geojson")))
 # print(os.path.abspath("../fgeocoder/mkad.geojson"))
@@ -23,12 +23,12 @@ from fgeocoder.geocalc import geocalc as geo
 #     yield client
 print(os.path.curdir)
 
+
 class GeocoderTestCase(unittest.TestCase):
 
     def setUp(self):
         self.app = create_app()
         self.client = self.app.test_client()
-
 
         # pass
         # app.app.testing = True
@@ -44,10 +44,12 @@ class GeocoderTestCase(unittest.TestCase):
         # web = app.test_client()
         response = self.client.get('/')
         self.assertEqual(response.status, "200 OK")
+        assert '<title>geocalc</title>' in response.data.decode('utf-8')
         # self.assertEqual(response.headers['content-type'], "text/html; charset=utf-8")
 
     def test_mkad_file(self):
-        m_file = os.path.join(os.path.dirname(os.getcwd()),"fgeocoder", "geocalc","mkad.geojson")
+        m_file = os.path.join(os.path.dirname(os.getcwd()), "fgeocoder",
+                              "geocalc", "mkad.geojson")
         print(os.path.isfile(m_file))
         print(m_file)
         self.assertTrue(
@@ -71,7 +73,7 @@ class GeocoderTestCase(unittest.TestCase):
     def test_haversine(self):
         self.assertAlmostEqual(geo.haversine(1, 2, 3, 4), 314.4918, places=3)
 
-    def test_distances(self):
+    def test_distances_app(self):
         addresses = ["А107, Moskovskaya oblast', Rusya, 142410",
                      "Pushkinsky District, Moskova Oblastı, Rusya, 141273",
                      "Ярославское ш., 47 км, Московская обл., 141273"]
@@ -79,3 +81,13 @@ class GeocoderTestCase(unittest.TestCase):
         results = [geo.distance_calc(address)[0] for address in addresses]
         for i in range(len(confirms)):
             self.assertAlmostEqual(confirms[i], results[i], places=3)
+
+    def test_distances_browser(self):
+        addresses = ["Ankara",
+                     "А107, Moskovskaya oblast', Rusya, 142410",
+                     "Pushkinsky District, Moskova Oblastı, Rusya, 141273",
+                     "Ярославское ш., 47 км, Московская обл., 141273"]
+        confirms = ["<h1>1776.","<h1>36.7", "<h1>33.9", "<h1>32.0"]
+        for i in range(len(addresses)):
+            response = self.client.get(f"/?address={addresses[i]}")
+            self.assertIn(confirms[i], response.data.decode('utf-8'))
