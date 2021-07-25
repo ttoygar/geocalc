@@ -157,9 +157,10 @@ def write_files(addr: str, lat1: float, lon1: float, lat2: float,
     fields: list = [datetime.datetime.utcnow(), addr, lat1, lon1,
                     lat2, lon2, distance]
 
-    with open(r'geoc.csv', 'a', encoding='utf-8') as file:
-        writer = csv.writer(file, delimiter=';')
-        writer.writerow(fields)
+    # This part is created for testing purposes
+    # with open(r'geoc.csv', 'a', encoding='utf-8') as file:
+    #     writer = csv.writer(file, delimiter=';')
+    #     writer.writerow(fields)
 
     with open(r'geoc.log', 'a', encoding='utf-8') as file:
         file.write(str(distance) + "\n")
