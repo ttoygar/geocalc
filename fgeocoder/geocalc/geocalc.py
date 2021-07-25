@@ -1,6 +1,7 @@
 import csv
 import datetime
 import json
+import os
 from math import radians, cos, sin, asin, sqrt
 from typing import Tuple
 
@@ -13,7 +14,7 @@ from shapely.ops import nearest_points
 geocalc = Blueprint("geocalc", __name__, static_folder='static',
                     template_folder='templates')
 
-MKAD_COORDS_FILE = "mkad.geojson"  # MKAD coordinates geojson file.
+MKAD_COORDS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mkad.geojson")  # MKAD coordinates geojson file.
 LOCATOR: geocoders = geopy.ArcGIS()  # Geocoder to use.
 R: float = 6372.8  # Radius of Earth. 3959.87433 miles or 6372.8 km
 
