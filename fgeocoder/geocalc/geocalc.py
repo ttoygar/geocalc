@@ -153,14 +153,16 @@ def distance_calc(addr: str,
 
 def write_files(addr: str, lat1: float, lon1: float, lat2: float,
                 lon2: float, distance: float) -> None:
-    """Writes related information to geoc.csv and geoc.log files."""
-    fields: list = [datetime.datetime.utcnow(), addr, lat1, lon1,
-                    lat2, lon2, distance]
+    """Writes related information to geoc.log files."""
+
+    with open(r'geoc.log', 'a', encoding='utf-8') as file:
+        file.write(str(distance) + "\n")
 
     # This part is created for testing purposes
+    # fields: list = [datetime.datetime.utcnow(), addr, lat1, lon1,
+    #                 lat2, lon2, distance]
     # with open(r'geoc.csv', 'a', encoding='utf-8') as file:
     #     writer = csv.writer(file, delimiter=';')
     #     writer.writerow(fields)
 
-    with open(r'geoc.log', 'a', encoding='utf-8') as file:
-        file.write(str(distance) + "\n")
+
